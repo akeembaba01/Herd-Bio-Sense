@@ -68,7 +68,7 @@
 
             <div class="flex space-x-4 mt-6">
                 <input type="text" id="cow-name" placeholder="Enter Cow ID to Save" class="flex-grow p-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500">
-                <button id="save-btn" onclick="saveProfile()" class="bg-lime-600 text-green font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-lime-700 transition-colors duration-300">
+                <button id="save-btn" onclick="saveProfile()" class="bg-lime-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-lime-700 transition-colors duration-300">
                     Save Profile
                 </button>
                 <button id="delete-btn" onclick="deleteProfile()" class="bg-red-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-red-700 transition-colors duration-300">
@@ -356,12 +356,23 @@
                 traces.push(newPointTrace);
             }
             
+            const annotations = [{
+                x: -2.5, y: 2.5, text: 'Unadapted but Balanced', showarrow: false, font: { size: 12, color: 'blue', weight: 'bold' }
+            }, {
+                x: 2.5, y: 2.5, text: 'Stressed!', showarrow: false, font: { size: 12, color: 'red', weight: 'bold' }
+            }, {
+                x: -2.5, y: -2.5, text: 'Ideal!', showarrow: false, font: { size: 12, color: 'green', weight: 'bold' }
+            }, {
+                x: 2.5, y: -2.5, text: 'Watchful Eye', showarrow: false, font: { size: 12, color: 'orange', weight: 'bold' }
+            }];
+
             const layout = {
                 title: 'PCA Biplot of Cattle Biochemical Profiles',
-                xaxis: { title: 'PC1 (General Health)' },
-                yaxis: { title: 'PC2 (Hormonal Balance)' },
+                xaxis: { title: 'PC1 (General Health)', range: [-3, 3] },
+                yaxis: { title: 'PC2 (Hormonal Balance)', range: [-3, 3] },
                 hovermode: 'closest',
-                showlegend: true
+                showlegend: true,
+                annotations: annotations
             };
             
             Plotly.newPlot('pca-plot', traces, layout);
