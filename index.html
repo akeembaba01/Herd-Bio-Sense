@@ -1,1 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cattle Health Compass</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+    <style>
+        html, body {
+            height: 100%;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+        .container {
+            max-width: 1200px;
+        }
+        .plot-container {
+            position: relative;
+        }
+        #pca-plot {
+            min-height: 400px;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="container mx-auto bg-white p-8 rounded-xl shadow-lg flex flex-col lg:flex-row space-y-8 lg:space-y-0 lg:space-x-8">
+        <!-- Input Panel -->
+        <div class="lg:w-1/3 p-6 bg-gray-50 rounded-lg shadow-inner">
+            <h2 class="text-2xl font-bold mb-4 text-gray-800">Assess Cattle Profile</h2>
+            <p class="text-gray-600 mb-6">Use the buttons below to create a health profile for your cow and see where it lands on the health map.</p>
+            <div id="input-fields" class="space-y-6">
+                <!-- Overall Health Score -->
+                <div class="input-group">
+                    <label class="block text-sm font-medium text-gray-700">1. Overall Health</label>
+                    <div class="flex space-x-2 mt-1">
+                        <button class="bg-green-200 text-green-800 font-semibold py-2 px-4 rounded-lg w-1/3 hover:bg-green-300" onclick="updateScores(-1, 0, 0)">Low</button>
+                        <button class="bg-yellow-200 text-yellow-800 font-semibold py-2 px-4 rounded-lg w-1/3 hover:bg-yellow-300" onclick="updateScores(0, 0, 0)">Medium</button>
+                        <button class="bg-red-200 text-red-800 font-semibold py-2 px-4 rounded-lg w-1/3 hover:bg-red-300" onclick="updateScores(1, 0, 0)">High</button>
+                    </div>
+                </div>
+                <!-- Hormonal Balance -->
+                <div class="input-group">
+                    <label class="block text-sm font-medium text-gray-700">2. Hormonal Balance</label>
+                    <div class="flex space-x-2 mt-1">
+                        <button class="bg-green-200 text-green-800 font-semibold py-2 px-4 rounded-lg w-1/3 hover:bg-green-300" onclick="updateScores(0, -1, 0)">Low</button>
+                        <button class="bg-yellow-200 text-yellow-800 font-semibold py-2 px-4 rounded-lg w-1/3 hover:bg-yellow-300" onclick="updateScores(0, 0, 0)">Medium</button>
+                        <button class="bg-red-200 text-red-800 font-semibold py-2 px-4 rounded-lg w-1/3 hover:bg-red-300" onclick="updateScores(0, 1, 0)">High</button>
+                    </div>
+                </div>
+                <!-- Oxidative Stress Level -->
+                <div class="input-group">
+                    <label class="block text-sm font-medium text-gray-700">3. Oxidative Stress Level</label>
+                    <div class="flex space-x-2 mt-1">
+                        <button class="bg-green-200 text-green-800 font-semibold py-2 px-4 rounded-lg w-1/3 hover:bg-green-300" onclick="updateScores(0, 0, -1)">Low</button>
+                        <button class="bg-yellow-200 text-yellow-800 font-semibold py-2 px-4 rounded-lg w-1/3 hover:bg-yellow-300" onclick="updateScores(0, 0, 0)">Medium</button>
+                        <button class="bg-red-200 text-red-800 font-semibold py-2 px-4 rounded-lg w-1/3 hover:bg-red-300" onclick="updateScores(0, 0, 1)">High</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-6 p-4 bg-green-100 rounded-lg">
+                <h3 class="font-bold text-lg text-green-800">Cow's Health Status</h3>
+                <p id="pc-score-display" class="text-sm text-green-800 mt-2">Make your selections above to see the results.</p>
+            </div>
+
+            <div class="flex space-x-4 mt-6">
+                <input type="text" id="cow-name" placeholder="Enter Cow ID to Save" class="flex-grow p-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500">
+                <button id="save-btn" onclick="saveProfile()" class="bg-lime-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-lime-700 transition-colors duration-300">
+                    Save Profile
+                </button>
+                <button id="delete-btn" onclick="deleteProfile()" class="bg-red-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-red-700 transition-colors duration-300">
+                    Delete Profile
+                </button>
+            </div>
+            
+        </div>
+
+        <!-- Plot Panel -->
+        <div class="lg:w-2/3 p-6 bg-gray-50 rounded-lg shadow-inner flex flex-col">
+            <h2 class="text-2xl font-bold mb-4 text-gray-800">PCA Visualization</h2>
+            <div class="plot-container w-full flex-grow">
+                <div id="pca-plot"></div>
+            </div>
+            <div class="mt-6 p-4 rounded-xl bg-white shadow-sm">
+                <h3 class="text-xl font-bold mb-2 text-gray-800">How to Interpret this Map</h3>
+                <p class="text-gray-700 mb-4">The map below shows your cow's health profile in relation to typical profiles of three different breeds. Use this to understand your cow's heat tolerance and overall health.</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <h4 class="font-semibold text-lg text-gray-800">Health Zones:</h4>
+                        <div class="mt-2 space-y-2">
+                            <div class="flex items-center space-x-2">
+                                <span class="w-4 h-4 bg-green-500 rounded-full"></span>
+                                <span class="text-gray-700 font-bold">Ideal Zone:</span>
+                                <span class="text-sm text-gray-600">Your cow is likely well-adapted and healthy.</span>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <span class="w-4 h-4 bg-red-500 rounded-full"></span>
+                                <span class="text-gray-700 font-bold">Stressed Zone:</span>
+                                <span class="text-sm text-gray-600">Your cow may be struggling with heat or other issues.</span>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <span class="w-4 h-4 bg-yellow-500 rounded-full"></span>
+                                <span class="text-gray-700 font-bold">Watchful Zone:</span>
+                                <span class="text-sm text-gray-600">Monitor this cow closely for changes in health.</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-lg text-gray-800">Breeds on the Map:</h4>
+                        <div class="mt-2 space-y-2">
+                            <div class="flex items-center space-x-2">
+                                <span class="w-4 h-4 bg-green-500 rounded-full"></span>
+                                <span class="text-gray-700 font-bold">Brangus:</span>
+                                <span class="text-sm text-gray-600">Naturally healthy and well-adapted to heat.</span>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <span class="w-4 h-4 bg-teal-500 rounded-full"></span>
+                                <span class="text-gray-700 font-bold">Kedah-Kelantan:</span>
+                                <span class="text-sm text-gray-600">A balanced and adaptable breed.</span>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <span class="w-4 h-4 bg-red-500 rounded-full"></span>
+                                <span class="text-sm text-gray-600">Holstein Friesian:</span>
+                                <span class="text-gray-700 font-bold">Holstein Friesian:</span>
+                                <span class="text-sm text-gray-600">Often prone to heat stress and less adapted.</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-4 p-4 rounded-xl bg-green-100 shadow-sm">
+                <h4 class="font-bold text-lg text-green-800">A Farmer's Guide to Using the Model</h4>
+                <p class="text-green-800 mt-2">Match your cow's visible traits to the descriptions below:</p>
+                <div class="mt-2 space-y-2 text-sm text-green-700">
+                    <p class="font-bold">Overall Health:</p>
+                    <ul class="list-disc list-inside ml-4">
+                        <li>**Low:** Cow is lethargic, has a dull coat, or is visibly unwell.</li>
+                        <li>**Medium:** Normal appearance and behavior for the breed.</li>
+                        <li>**High:** Cow is very active, has a shiny coat, and is eating very well.</li>
+                    </ul>
+                    <p class="font-bold">Hormonal Balance:</p>
+                    <ul class="list-disc list-inside ml-4">
+                        <li>**Low:** Cow seems calm, has stable behavior, and a good appetite.</li>
+                        <li>**Medium:** Average behavior.</li>
+                        <li>**High:** Cow shows erratic or jittery behavior and a reduced appetite.</li>
+                    </ul>
+                    <p class="font-bold">Oxidative Stress Level:</p>
+                    <ul class="list-disc list-inside ml-4">
+                        <li>**Low:** Cow is in a cool, shaded environment with minimal physical stressors.</li>
+                        <li>**Medium:** In average conditions, with some exposure to sun or heat.</li>
+                        <li>**High:** Cow is in direct sunlight on a very hot day and shows signs of discomfort.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-app.js";
+        import { getAuth, signInWithCustomToken, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, serverTimestamp, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore.js";
+
+        // --- Core Data for PCA Model ---
+        const pcaData = {
+            // PC scores for the original data points from the analysis
+            original_scores: [
+                { breed: 'BR', pc1: -1.72, pc2: -0.15 }, { breed: 'BR', pc1: -1.02, pc2: 0.18 },
+                { breed: 'BR', pc1: -0.84, pc2: 0.29 }, { breed: 'BR', pc1: 0.25, pc2: -0.42 },
+                { breed: 'BR', pc1: -0.09, pc2: -0.63 }, { breed: 'BR', pc1: -0.72, pc2: 0.21 },
+                { breed: 'BR', pc1: -0.11, pc2: 0.38 }, { breed: 'BR', pc1: 1.09, pc2: 0.11 },
+                { breed: 'BR', pc1: -1.07, pc2: 0.15 }, { breed: 'BR', pc1: -1.41, pc2: 0.10 },
+                { breed: 'BR', pc1: -0.37, pc2: -0.11 }, { breed: 'BR', pc1: -0.45, pc2: 0.13 },
+                { breed: 'BR', pc1: -0.61, pc2: -0.02 }, { breed: 'BR', pc1: -0.14, pc2: -0.34 },
+                { breed: 'BR', pc1: -0.58, pc2: 0.31 }, { breed: 'BR', pc1: 0.33, pc2: -0.19 },
+                { breed: 'KK', pc1: 1.05, pc2: 0.03 }, { breed: 'KK', pc1: 0.81, pc2: -0.11 },
+                { breed: 'KK', pc1: -0.39, pc2: -0.45 }, { breed: 'KK', pc1: -0.11, pc2: -0.12 },
+                { breed: 'KK', pc1: -0.15, pc2: -0.30 }, { breed: 'KK', pc1: -0.73, pc2: 0.03 },
+                { breed: 'KK', pc1: -0.49, pc2: 0.06 }, { breed: 'KK', pc1: -0.05, pc2: 0.28 },
+                { breed: 'KK', pc1: 0.08, pc2: 0.40 }, { breed: 'KK', pc1: 0.09, pc2: 0.33 },
+                { breed: 'KK', pc1: 0.77, pc2: -0.09 }, { breed: 'KK', pc1: 0.69, pc2: -0.21 },
+                { breed: 'KK', pc1: 1.48, pc2: 0.15 }, { breed: 'KK', pc1: 0.88, pc2: -0.28 },
+                { breed: 'KK', pc1: -0.12, pc2: -0.33 }, { breed: 'KK', pc1: 1.39, pc2: -0.39 },
+                { breed: 'HF', pc1: 1.83, pc2: 0.84 }, { breed: 'HF', pc1: 0.66, pc2: 1.34 },
+                { breed: 'HF', pc1: 0.99, pc2: 1.58 }, { breed: 'HF', pc1: 1.09, pc2: 1.77 },
+                { breed: 'HF', pc1: 0.16, pc2: 0.29 }, { breed: 'HF', pc1: 0.05, pc2: 0.20 },
+                { breed: 'HF', pc1: 0.66, pc2: 0.68 }, { breed: 'HF', pc1: 0.26, pc2: 0.16 },
+                { breed: 'HF', pc1: 0.26, pc2: 0.16 }, { breed: 'HF', pc1: 1.59, pc2: 0.42 },
+                { breed: 'HF', pc1: 1.62, pc2: 0.71 }, { breed: 'HF', pc1: 1.08, pc2: 0.83 },
+                { breed: 'HF', pc1: 0.23, pc2: 0.21 }, { breed: 'HF', pc1: 0.96, pc2: 0.87 },
+                { breed: 'HF', pc1: 0.11, pc2: 0.31 }, { breed: 'HF', pc1: 1.46, pc2: 1.31 },
+            ]
+        };
+
+        let currentPC1 = 0;
+        let currentPC2 = 0;
+        let currentPC3 = 0;
+
+        window.updateScores = function(pc1change, pc2change, pc3change) {
+            currentPC1 += pc1change * 0.5;
+            currentPC2 += pc2change * 0.5;
+            currentPC3 += pc3change * 0.5;
+
+            currentPC1 = Math.min(Math.max(currentPC1, -2.0), 2.0);
+            currentPC2 = Math.min(Math.max(currentPC2, -2.0), 2.0);
+            currentPC3 = Math.min(Math.max(currentPC3, -2.0), 2.0);
+            
+            document.getElementById('pc-score-display').innerHTML = `
+                <p class="font-bold">Overall Health: ${currentPC1 > 1 ? 'High' : currentPC1 < -1 ? 'Low' : 'Medium'}</p>
+                <p class="font-bold">Hormonal Balance: ${currentPC2 > 1 ? 'High' : currentPC2 < -1 ? 'Low' : 'Medium'}</p>
+                <p class="font-bold">Oxidative Stress: ${currentPC3 > 1 ? 'High' : currentPC3 < -1 ? 'Low' : 'Medium'}</p>
+                <p class="mt-2 text-sm">Your cow's scores: PC1 = ${currentPC1.toFixed(1)}, PC2 = ${currentPC2.toFixed(1)}</p>
+            `;
+            
+            plotGraph(currentPC1, currentPC2);
+        };
+        
+        let userCowProfiles = [];
+
+        // Firebase Initialization
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        
+        // Authenticate with custom token or anonymously
+        async function authenticate() {
+            try {
+                if (typeof __initial_auth_token !== 'undefined') {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+                const userId = auth.currentUser?.uid || 'anonymous';
+                console.log("Authenticated with user ID:", userId);
+                
+                // Set up real-time listener for this user's profiles
+                const q = query(collection(db, `artifacts/${appId}/users/${userId}/profiles`));
+                onSnapshot(q, (snapshot) => {
+                    userCowProfiles = [];
+                    snapshot.forEach((doc) => {
+                        userCowProfiles.push({ id: doc.id, ...doc.data() });
+                    });
+                    updateScores(0, 0, 0); // Update the plot with the new data
+                });
+            } catch (error) {
+                console.error("Authentication failed:", error);
+            }
+        }
+
+        // Save a new profile to Firestore
+        window.saveProfile = async function() {
+            const cowName = document.getElementById('cow-name').value;
+
+            if (!cowName) {
+                alert("Please enter a Cow ID/Name before saving.");
+                return;
+            }
+
+            const userId = auth.currentUser?.uid || 'anonymous';
+            try {
+                await addDoc(collection(db, `artifacts/${appId}/users/${userId}/profiles`), {
+                    name: cowName,
+                    pc1: currentPC1,
+                    pc2: currentPC2,
+                    pc3: currentPC3,
+                    timestamp: serverTimestamp()
+                });
+                document.getElementById('pc-score-display').textContent = `Profile for ${cowName} saved successfully!`;
+            } catch (e) {
+                console.error("Error adding document: ", e);
+                document.getElementById('pc-score-display').textContent = `Error saving profile.`;
+            }
+        }
+        
+        // Delete a saved profile from Firestore
+        window.deleteProfile = async function() {
+            const cowName = document.getElementById('cow-name').value;
+
+            if (!cowName) {
+                alert("Please enter a Cow ID/Name to delete.");
+                return;
+            }
+            
+            const profileToDelete = userCowProfiles.find(p => p.name === cowName);
+            if (profileToDelete) {
+                const userId = auth.currentUser?.uid || 'anonymous';
+                try {
+                    await deleteDoc(doc(db, `artifacts/${appId}/users/${userId}/profiles`, profileToDelete.id));
+                    document.getElementById('pc-score-display').textContent = `Profile for ${cowName} deleted successfully.`;
+                } catch (e) {
+                    console.error("Error deleting document: ", e);
+                    document.getElementById('pc-score-display').textContent = `Error deleting profile.`;
+                }
+            } else {
+                alert("Profile not found. Please enter an existing Cow ID.");
+            }
+        }
+
+        function plotGraph(newPC1, newPC2) {
+            const breeds = ['BR', 'KK', 'HF'];
+            const colors = {
+                'BR': '#22c55e', // green-500
+                'KK': '#00bfa5', // teal-500
+                'HF': '#ef4444' // red-500
+            };
+            
+            // Create a trace for each breed
+            const originalTraces = breeds.map(breed => {
+                const breedData = pcaData.original_scores.filter(d => d.breed === breed);
+                return {
+                    x: breedData.map(d => d.pc1),
+                    y: breedData.map(d => d.pc2),
+                    mode: 'markers',
+                    type: 'scatter',
+                    name: `Original ${breed} Data`,
+                    marker: { color: colors[breed], size: 8, opacity: 0.6 }
+                };
+            });
+            
+            // Create a trace for the saved user profiles
+            const userProfilesTrace = {
+                x: userCowProfiles.map(d => d.pc1),
+                y: userCowProfiles.map(d => d.pc2),
+                text: userCowProfiles.map(d => d.name),
+                mode: 'markers+text',
+                type: 'scatter',
+                name: 'Saved Profiles',
+                marker: { color: '#000000', size: 10, symbol: 'circle', line: { width: 2, color: 'black' } },
+                textposition: 'bottom center',
+                textfont: {
+                    family: 'Arial, sans-serif',
+                    size: 14,
+                    color: 'black'
+                }
+            };
+
+            // Add the new data point if it's available
+            const newPointTrace = {
+                x: [newPC1],
+                y: [newPC2],
+                mode: 'markers',
+                type: 'scatter',
+                name: 'Your cow',
+                marker: { color: 'black', size: 12, symbol: 'star', line: { width: 2, color: 'black' } }
+            };
+
+            let traces = originalTraces;
+            if (userCowProfiles.length > 0) {
+                traces.push(userProfilesTrace);
+            }
+            if (newPC1 !== null && newPC2 !== null) {
+                traces.push(newPointTrace);
+            }
+            
+            const annotations = [{
+                x: -2.5, y: 2.5, text: 'Unadapted but Balanced', showarrow: false, font: { size: 12, color: 'blue', weight: 'bold' }
+            }, {
+                x: 2.5, y: 2.5, text: 'Stressed!', showarrow: false, font: { size: 12, color: 'red', weight: 'bold' }
+            }, {
+                x: -2.5, y: -2.5, text: 'Ideal!', showarrow: false, font: { size: 12, color: 'green', weight: 'bold' }
+            }, {
+                x: 2.5, y: -2.5, text: 'Watchful Eye', showarrow: false, font: { size: 12, color: 'orange', weight: 'bold' }
+            }];
+
+            const layout = {
+                title: 'PCA Biplot of Cattle Biochemical Profiles',
+                xaxis: { title: 'PC1 (General Health)', range: [-3, 3] },
+                yaxis: { title: 'PC2 (Hormonal Balance)', range: [-3, 3] },
+                hovermode: 'closest',
+                showlegend: true,
+                annotations: annotations
+            };
+            
+            Plotly.newPlot('pca-plot', traces, layout);
+        };
+        
+        // Start the application by authenticating
+        authenticate();
+    </script>
+</body>
+</html>
 
