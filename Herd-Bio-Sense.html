@@ -30,41 +30,33 @@
         <!-- Input Panel -->
         <div class="lg:w-1/3 p-6 bg-gray-50 rounded-lg shadow-inner">
             <h2 class="text-2xl font-bold mb-4 text-gray-800">Assess Cattle Profile</h2>
-            <p class="text-gray-600 mb-6">Use the buttons below to create a health profile for your cow and see where it lands on the health map.</p>
+            <p class="text-gray-600 mb-6">Enter values from 1-3 to create a health profile for your cow and see where it lands on the health map.</p>
             <div id="input-fields" class="space-y-6">
                 <!-- Overall Health Score -->
                 <div class="input-group">
-                    <label class="block text-sm font-medium text-gray-700">1. Overall Health</label>
-                    <div class="flex space-x-2 mt-1">
-                        <button class="bg-green-200 text-green-800 font-semibold py-2 px-4 rounded-lg w-1/3 hover:bg-green-300" onclick="updateScores(-1, 0, 0)">Low</button>
-                        <button class="bg-yellow-200 text-yellow-800 font-semibold py-2 px-4 rounded-lg w-1/3 hover:bg-yellow-300" onclick="updateScores(0, 0, 0)">Medium</button>
-                        <button class="bg-red-200 text-red-800 font-semibold py-2 px-4 rounded-lg w-1/3 hover:bg-red-300" onclick="updateScores(1, 0, 0)">High</button>
-                    </div>
+                    <label for="overall-health" class="block text-sm font-medium text-gray-700">1. Overall Health (1=Low, 3=High)</label>
+                    <input type="number" id="overall-health" min="1" max="3" value="2" class="mt-1 w-full p-2 rounded-lg border border-gray-300">
                 </div>
                 <!-- Hormonal Balance -->
                 <div class="input-group">
-                    <label class="block text-sm font-medium text-gray-700">2. Hormonal Balance</label>
-                    <div class="flex space-x-2 mt-1">
-                        <button class="bg-green-200 text-green-800 font-semibold py-2 px-4 rounded-lg w-1/3 hover:bg-green-300" onclick="updateScores(0, -1, 0)">Low</button>
-                        <button class="bg-yellow-200 text-yellow-800 font-semibold py-2 px-4 rounded-lg w-1/3 hover:bg-yellow-300" onclick="updateScores(0, 0, 0)">Medium</button>
-                        <button class="bg-red-200 text-red-800 font-semibold py-2 px-4 rounded-lg w-1/3 hover:bg-red-300" onclick="updateScores(0, 1, 0)">High</button>
-                    </div>
+                    <label for="hormonal-balance" class="block text-sm font-medium text-gray-700">2. Hormonal Balance (1=Low, 3=High)</label>
+                    <input type="number" id="hormonal-balance" min="1" max="3" value="2" class="mt-1 w-full p-2 rounded-lg border border-gray-300">
                 </div>
-                <!-- Oxidative Stress Level -->
+                <!-- Heat Stress Level -->
                 <div class="input-group">
-                    <label class="block text-sm font-medium text-gray-700">3. Oxidative Stress Level</label>
-                    <div class="flex space-x-2 mt-1">
-                        <button class="bg-green-200 text-green-800 font-semibold py-2 px-4 rounded-lg w-1/3 hover:bg-green-300" onclick="updateScores(0, 0, -1)">Low</button>
-                        <button class="bg-yellow-200 text-yellow-800 font-semibold py-2 px-4 rounded-lg w-1/3 hover:bg-yellow-300" onclick="updateScores(0, 0, 0)">Medium</button>
-                        <button class="bg-red-200 text-red-800 font-semibold py-2 px-4 rounded-lg w-1/3 hover:bg-red-300" onclick="updateScores(0, 0, 1)">High</button>
-                    </div>
+                    <label for="heat-stress" class="block text-sm font-medium text-gray-700">3. Heat Stress Level (1=Low, 3=High)</label>
+                    <input type="number" id="heat-stress" min="1" max="3" value="2" class="mt-1 w-full p-2 rounded-lg border border-gray-300">
                 </div>
             </div>
             
             <div class="mt-6 p-4 bg-green-100 rounded-lg">
                 <h3 class="font-bold text-lg text-green-800">Cow's Health Status</h3>
-                <p id="pc-score-display" class="text-sm text-green-800 mt-2">Make your selections above to see the results.</p>
+                <p id="pc-score-display" class="text-sm text-green-800 mt-2">Enter your cow's health status above to see the results.</p>
             </div>
+            
+            <button id="calculate-btn" onclick="updateScores()" class="mt-6 w-full bg-green-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:bg-green-700 transition-colors duration-300">
+                Calculate
+            </button>
 
             <div class="flex space-x-4 mt-6">
                 <input type="text" id="cow-name" placeholder="Enter Cow ID to Save" class="flex-grow p-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500">
@@ -137,21 +129,21 @@
                 <div class="mt-2 space-y-2 text-sm text-green-700">
                     <p class="font-bold">Overall Health:</p>
                     <ul class="list-disc list-inside ml-4">
-                        <li>**Low:** Cow is lethargic, has a dull coat, or is visibly unwell.</li>
-                        <li>**Medium:** Normal appearance and behavior for the breed.</li>
-                        <li>**High:** Cow is very active, has a shiny coat, and is eating very well.</li>
+                        <li>1 (Low):Cow is lethargic, has a dull coat, or is visibly unwell.</li>
+                        <li>2 (Medium):Normal appearance and behavior for the breed.</li>
+                        <li>3 (High):Cow is very active, has a shiny coat, and is eating very well.</li>
                     </ul>
                     <p class="font-bold">Hormonal Balance:</p>
                     <ul class="list-disc list-inside ml-4">
-                        <li>**Low:** Cow seems calm, has stable behavior, and a good appetite.</li>
-                        <li>**Medium:** Average behavior.</li>
-                        <li>**High:** Cow shows erratic or jittery behavior and a reduced appetite.</li>
+                        <li>1 (Low):Cow seems calm, has stable behavior, and a good appetite.</li>
+                        <li>2 (Medium):Average behavior.</li>
+                        <li>3 (High):Cow shows erratic or jittery behavior and a reduced appetite.</li>
                     </ul>
-                    <p class="font-bold">Oxidative Stress Level:</p>
+                    <p class="font-bold">Heat Stress Level:</p>
                     <ul class="list-disc list-inside ml-4">
-                        <li>**Low:** Cow is in a cool, shaded environment with minimal physical stressors.</li>
-                        <li>**Medium:** In average conditions, with some exposure to sun or heat.</li>
-                        <li>**High:** Cow is in direct sunlight on a very hot day and shows signs of discomfort.</li>
+                        <li>1 (Low):Cow is in a cool, shaded environment with minimal physical stressors.</li>
+                        <li>2 (Medium):In average conditions, with some exposure to sun or heat.</li>
+                        <li>3 (High):Cow is in direct sunlight on a very hot day and shows signs of discomfort.</li>
                     </ul>
                 </div>
             </div>
@@ -198,20 +190,24 @@
         let currentPC2 = 0;
         let currentPC3 = 0;
 
-        window.updateScores = function(pc1change, pc2change, pc3change) {
-            currentPC1 += pc1change * 0.5;
-            currentPC2 += pc2change * 0.5;
-            currentPC3 += pc3change * 0.5;
+        window.updateScores = function() {
+            const pc1Value = parseFloat(document.getElementById('overall-health').value);
+            const pc2Value = parseFloat(document.getElementById('hormonal-balance').value);
+            const pc3Value = parseFloat(document.getElementById('heat-stress').value);
 
-            currentPC1 = Math.min(Math.max(currentPC1, -2.0), 2.0);
-            currentPC2 = Math.min(Math.max(currentPC2, -2.0), 2.0);
-            currentPC3 = Math.min(Math.max(currentPC3, -2.0), 2.0);
+            // Corrected mapping:
+            // High health (3) should map to a negative PC1 score, so we invert the scale.
+            // High hormonal balance (3) should map to a negative PC2 score, so we invert the scale.
+            // High heat stress (3) should map to a positive PC3 score.
+            currentPC1 = (pc1Value - 2) * -1;
+            currentPC2 = (pc2Value - 2) * -1;
+            currentPC3 = (pc3Value - 2) * 1;
             
             document.getElementById('pc-score-display').innerHTML = `
-                <p class="font-bold">Overall Health: ${currentPC1 > 1 ? 'High' : currentPC1 < -1 ? 'Low' : 'Medium'}</p>
-                <p class="font-bold">Hormonal Balance: ${currentPC2 > 1 ? 'High' : currentPC2 < -1 ? 'Low' : 'Medium'}</p>
-                <p class="font-bold">Oxidative Stress: ${currentPC3 > 1 ? 'High' : currentPC3 < -1 ? 'Low' : 'Medium'}</p>
-                <p class="mt-2 text-sm">Your cow's scores: PC1 = ${currentPC1.toFixed(1)}, PC2 = ${currentPC2.toFixed(1)}</p>
+                <p class="font-bold">Overall Health: ${pc1Value === 1 ? 'Low' : pc1Value === 3 ? 'High' : 'Medium'}</p>
+                <p class="font-bold">Hormonal Balance: ${pc2Value === 1 ? 'Low' : pc2Value === 3 ? 'High' : 'Medium'}</p>
+                <p class="font-bold">Heat Stress: ${pc3Value === 1 ? 'Low' : pc3Value === 3 ? 'High' : 'Medium'}</p>
+                <p class="mt-2 text-sm">Your cow's scores: PC1 = ${currentPC1.toFixed(1)}, PC2 = ${currentPC2.toFixed(1)}, PC3 = ${currentPC3.toFixed(1)}</p>
             `;
             
             plotGraph(currentPC1, currentPC2);
@@ -226,7 +222,6 @@
         const db = getFirestore(app);
         const auth = getAuth(app);
         
-        // Authenticate with custom token or anonymously
         async function authenticate() {
             try {
                 if (typeof __initial_auth_token !== 'undefined') {
@@ -237,21 +232,19 @@
                 const userId = auth.currentUser?.uid || 'anonymous';
                 console.log("Authenticated with user ID:", userId);
                 
-                // Set up real-time listener for this user's profiles
                 const q = query(collection(db, `artifacts/${appId}/users/${userId}/profiles`));
                 onSnapshot(q, (snapshot) => {
                     userCowProfiles = [];
                     snapshot.forEach((doc) => {
                         userCowProfiles.push({ id: doc.id, ...doc.data() });
                     });
-                    updateScores(0, 0, 0); // Update the plot with the new data
+                    updateScores();
                 });
             } catch (error) {
                 console.error("Authentication failed:", error);
             }
         }
 
-        // Save a new profile to Firestore
         window.saveProfile = async function() {
             const cowName = document.getElementById('cow-name').value;
 
@@ -276,7 +269,6 @@
             }
         }
         
-        // Delete a saved profile from Firestore
         window.deleteProfile = async function() {
             const cowName = document.getElementById('cow-name').value;
 
@@ -308,7 +300,6 @@
                 'HF': '#ef4444' // red-500
             };
             
-            // Create a trace for each breed
             const originalTraces = breeds.map(breed => {
                 const breedData = pcaData.original_scores.filter(d => d.breed === breed);
                 return {
@@ -321,7 +312,6 @@
                 };
             });
             
-            // Create a trace for the saved user profiles
             const userProfilesTrace = {
                 x: userCowProfiles.map(d => d.pc1),
                 y: userCowProfiles.map(d => d.pc2),
@@ -338,7 +328,6 @@
                 }
             };
 
-            // Add the new data point if it's available
             const newPointTrace = {
                 x: [newPC1],
                 y: [newPC2],
@@ -356,29 +345,17 @@
                 traces.push(newPointTrace);
             }
             
-            const annotations = [{
-                x: -2.5, y: 2.5, text: 'Unadapted but Balanced', showarrow: false, font: { size: 12, color: 'blue', weight: 'bold' }
-            }, {
-                x: 2.5, y: 2.5, text: 'Stressed!', showarrow: false, font: { size: 12, color: 'red', weight: 'bold' }
-            }, {
-                x: -2.5, y: -2.5, text: 'Ideal!', showarrow: false, font: { size: 12, color: 'green', weight: 'bold' }
-            }, {
-                x: 2.5, y: -2.5, text: 'Watchful Eye', showarrow: false, font: { size: 12, color: 'orange', weight: 'bold' }
-            }];
-
             const layout = {
                 title: 'PCA Biplot of Cattle Biochemical Profiles',
-                xaxis: { title: 'PC1 (General Health)', range: [-3, 3] },
-                yaxis: { title: 'PC2 (Hormonal Balance)', range: [-3, 3] },
+                xaxis: { title: 'PC1 (General Health)' },
+                yaxis: { title: 'PC2 (Hormonal Balance)' },
                 hovermode: 'closest',
-                showlegend: true,
-                annotations: annotations
+                showlegend: true
             };
             
             Plotly.newPlot('pca-plot', traces, layout);
         };
         
-        // Start the application by authenticating
         authenticate();
     </script>
 </body>
