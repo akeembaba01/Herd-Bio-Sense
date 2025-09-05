@@ -5,294 +5,619 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cattle Health Compass</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
     <style>
         html, body {
             height: 100%;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
         }
         body {
-            font-family: 'Inter', sans-serif;
             background-color: #f3f4f6;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
         }
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 15px;
         }
         .plot-container {
             position: relative;
+            height: 400px;
         }
         #pca-plot {
-            min-height: 400px;
+            height: 100%;
+            width: 100%;
+        }
+        .quadrant-label {
+            position: absolute;
+            font-weight: bold;
+            padding: 8px 12px;
+            border-radius: 8px;
+            z-index: 100;
+            pointer-events: none;
+            font-size: 14px;
+            text-align: center;
+            width: 140px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        .quadrant-top-right {
+            top: 15px;
+            right: 15px;
+            background-color: rgba(239, 68, 68, 0.9);
+            color: white;
+            border: 2px solid #dc2626;
+        }
+        .quadrant-top-left {
+            top: 15px;
+            left: 15px;
+            background-color: rgba(251, 191, 36, 0.9);
+            color: black;
+            border: 2px solid #d97706;
+        }
+        .quadrant-bottom-right {
+            bottom: 15px;
+            right: 15px;
+            background-color: rgba(251, 191, 36, 0.9);
+            color: black;
+            border: 2px solid #d97706;
+        }
+        .quadrant-bottom-left {
+            bottom: 15px;
+            left: 15px;
+            background-color: rgba(34, 197, 94, 0.9);
+            color: white;
+            border: 2px solid #16a34a;
+        }
+        footer {
+            margin-top: auto;
+            background-color: #1f2937;
+            color: white;
+            padding: 1rem;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+        .rating-container {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+        }
+        .rating-btn {
+            flex: 1;
+            text-align: center;
+            padding: 10px 5px;
+            margin: 0 3px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid #e5e7eb;
+            background-color: #f9fafb;
+        }
+        .rating-btn:hover {
+            background-color: #e5e7eb;
+        }
+        .rating-btn.selected {
+            border-color: #3b82f6;
+            background-color: #dbeafe;
+        }
+        .rating-btn i {
+            font-size: 20px;
+            margin-bottom: 5px;
+        }
+        .breed-comparison {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 20px;
+            text-align: center;
+            gap: 10px;
+        }
+        .breed-card {
+            flex: 1;
+            min-width: 120px;
+            padding: 12px;
+            border-radius: 10px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-weight: bold;
+            margin-top: 8px;
+            color: white;
+            font-size: 12px;
+        }
+        .content-wrapper {
+            flex: 1;
+            padding: 15px 0;
+        }
+        .guide-panel {
+            background-color: #f0f9ff;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+            border-left: 4px solid #38bdf8;
+        }
+        .guide-item {
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .guide-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        .saved-profile {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            background-color: #f9fafb;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            border: 1px solid #e5e7eb;
+        }
+        .saved-profile button {
+            padding: 4px 8px;
+            background-color: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .report-panel {
+            background-color: #fef3c7;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+            border-left: 4px solid #f59e0b;
+        }
+        
+        /* Mobile-specific styles */
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 10px;
+            }
+            
+            .plot-container {
+                height: 350px;
+            }
+            
+            .quadrant-label {
+                font-size: 12px;
+                width: 120px;
+                padding: 6px 8px;
+            }
+            
+            .rating-btn {
+                padding: 8px 3px;
+            }
+            
+            .rating-btn i {
+                font-size: 18px;
+            }
+            
+            .breed-card {
+                min-width: 100px;
+                padding: 8px;
+            }
+            
+            #calculate-btn, #save-btn, #report-btn {
+                padding: 12px;
+                font-size: 14px;
+            }
+            
+            footer {
+                padding: 0.8rem;
+                font-size: 0.8rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .plot-container {
+                height: 300px;
+            }
+            
+            .quadrant-label {
+                font-size: 10px;
+                width: 100px;
+                padding: 4px 6px;
+            }
+            
+            .rating-container {
+                flex-direction: column;
+                gap: 8px;
+            }
+            
+            .rating-btn {
+                padding: 10px;
+            }
+            
+            .breed-comparison {
+                flex-direction: column;
+            }
+            
+            .breed-card {
+                min-width: auto;
+            }
         }
     </style>
 </head>
-<body class="bg-gray-100 p-8">
-    <div class="container mx-auto bg-white p-8 rounded-xl shadow-lg flex flex-col lg:flex-row space-y-8 lg:space-y-0 lg:space-x-8">
-        <!-- Input Panel -->
-        <div class="lg:w-1/3 p-6 bg-gray-50 rounded-lg shadow-inner">
-            <h2 class="text-2xl font-bold mb-4 text-gray-800">Assess Cattle Profile</h2>
-            <p class="text-gray-600 mb-6">Enter values from 1-3 to create a health profile for your cow and see where it lands on the health map.</p>
-            <div id="input-fields" class="space-y-6">
-                <!-- Overall Health Score -->
-                <div class="input-group">
-                    <label for="overall-health" class="block text-sm font-medium text-gray-700">1. Overall Health (1=Low, 3=High)</label>
-                    <input type="number" id="overall-health" min="1" max="3" value="2" class="mt-1 w-full p-2 rounded-lg border border-gray-300">
-                </div>
-                <!-- Hormonal Balance -->
-                <div class="input-group">
-                    <label for="hormonal-balance" class="block text-sm font-medium text-gray-700">2. Hormonal Balance (1=Low, 3=High)</label>
-                    <input type="number" id="hormonal-balance" min="1" max="3" value="2" class="mt-1 w-full p-2 rounded-lg border border-gray-300">
-                </div>
-                <!-- Heat Stress Level -->
-                <div class="input-group">
-                    <label for="heat-stress" class="block text-sm font-medium text-gray-700">3. Heat Stress Level (1=Low, 3=High)</label>
-                    <input type="number" id="heat-stress" min="1" max="3" value="2" class="mt-1 w-full p-2 rounded-lg border border-gray-300">
-                </div>
-            </div>
-            
-            <div class="mt-6 p-4 bg-green-100 rounded-lg">
-                <h3 class="font-bold text-lg text-green-800">Cow's Health Status</h3>
-                <p id="pc-score-display" class="text-sm text-green-800 mt-2">Enter your cow's health status above to see the results.</p>
-            </div>
-            
-            <button id="calculate-btn" onclick="updateScores()" class="mt-6 w-full bg-green-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:bg-green-700 transition-colors duration-300">
-                Calculate
-            </button>
+<body>
+    <div class="content-wrapper">
+        <div class="container mx-auto bg-white p-4 rounded-xl shadow-lg">
+            <header class="text-center mb-6">
+                <h1 class="text-2xl md:text-3xl font-bold text-green-800"><i class="fas fa-cow mr-2"></i>Cattle Health Compass</h1>
+                <p class="text-gray-600 mt-2 text-sm md:text-base">Simple tool to assess your cattle's health and heat stress levels</p>
+            </header>
 
-            <div class="flex space-x-4 mt-6">
-                <input type="text" id="cow-name" placeholder="Enter Cow ID to Save" class="flex-grow p-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500">
-                <button id="save-btn" onclick="saveProfile()" class="bg-green-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-lime-700 transition-colors duration-300">
-                    Save Profile
-                </button>
-                <button id="delete-btn" onclick="deleteProfile()" class="bg-red-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-red-700 transition-colors duration-300">
-                    Delete Profile
-                </button>
-            </div>
-            
-        </div>
+            <div class="flex flex-col lg:flex-row gap-6">
+                <!-- Input Panel -->
+                <div class="lg:w-2/5 p-4 bg-gray-50 rounded-lg shadow-inner">
+                    <h2 class="text-xl font-bold mb-3 text-gray-800"><i class="fas fa-clipboard-list mr-2"></i>Assess Cattle Profile</h2>
+                    <p class="text-gray-600 mb-4 text-sm">Select values for your cow's health indicators to see where it lands on the health map.</p>
+                    
+                    <div id="input-fields" class="space-y-6">
+                        <!-- Overall Health Score -->
+                        <div class="input-group">
+                            <label class="block font-medium text-gray-700">
+                                <i class="fas fa-heartbeat mr-2"></i>1. Overall Health
+                            </label>
+                            <p class="text-xs text-gray-600 mt-1">How healthy does your cow appear?</p>
+                            <div class="rating-container">
+                                <div class="rating-btn" data-value="1" data-input="overall-health">
+                                    <i class="fas fa-frown text-red-500"></i>
+                                    <div class="text-xs">Low</div>
+                                </div>
+                                <div class="rating-btn selected" data-value="2" data-input="overall-health">
+                                    <i class="fas fa-meh text-yellow-500"></i>
+                                    <div class="text-xs">Medium</div>
+                                </div>
+                                <div class="rating-btn" data-value="3" data-input="overall-health">
+                                    <i class="fas fa-smile text-green-500"></i>
+                                    <div class="text-xs">High</div>
+                                </div>
+                            </div>
+                            <input type="hidden" id="overall-health" value="2">
+                        </div>
+                        
+                        <!-- Hormonal Balance -->
+                        <div class="input-group">
+                            <label class="block font-medium text-gray-700">
+                                <i class="fas fa-balance-scale mr-2"></i>2. Hormonal Balance
+                            </label>
+                            <p class="text-xs text-gray-600 mt-1">How stable is your cow's behavior?</p>
+                            <div class="rating-container">
+                                <div class="rating-btn" data-value="1" data-input="hormonal-balance">
+                                    <i class="fas fa-frown text-red-500"></i>
+                                    <div class="text-xs">Erratic</div>
+                                </div>
+                                <div class="rating-btn selected" data-value="2" data-input="hormonal-balance">
+                                    <i class="fas fa-meh text-yellow-500"></i>
+                                    <div class="text-xs">Normal</div>
+                                </div>
+                                <div class="rating-btn" data-value="3" data-input="hormonal-balance">
+                                    <i class="fas fa-smile text-green-500"></i>
+                                    <div class="text-xs">Stable</div>
+                                </div>
+                            </div>
+                            <input type="hidden" id="hormonal-balance" value="2">
+                        </div>
+                        
+                        <!-- Heat Stress Level -->
+                        <div class="input-group">
+                            <label class="block font-medium text-gray-700">
+                                <i class="fas fa-temperature-high mr-2"></i>3. Heat Stress Level
+                            </label>
+                            <p class="text-xs text-gray-600 mt-1">How stressed does your cow appear from heat?</p>
+                            <div class="rating-container">
+                                <div class="rating-btn" data-value="1" data-input="heat-stress">
+                                    <i class="fas fa-smile text-green-500"></i>
+                                    <div class="text-xs">Comfortable</div>
+                                </div>
+                                <div class="rating-btn selected" data-value="2" data-input="heat-stress">
+                                    <i class="fas fa-meh text-yellow-500"></i>
+                                    <div class="text-xs">Warm</div>
+                                </div>
+                                <div class="rating-btn" data-value="3" data-input="heat-stress">
+                                    <i class="fas fa-frown text-red-500"></i>
+                                    <div class="text-xs">Stressed</div>
+                                </div>
+                            </div>
+                            <input type="hidden" id="heat-stress" value="2">
+                        </div>
+                    </div>
+                    
+                    <!-- Simple Guide for Farmers -->
+                    <div class="guide-panel">
+                        <h3 class="font-bold text-blue-800 mb-3"><i class="fas fa-lightbulb mr-2"></i>Quick Assessment Guide</h3>
+                        
+                        <div class="guide-item">
+                            <h4 class="font-medium text-blue-700">Hormonal Balance</h4>
+                            <ul class="text-xs text-blue-800 mt-1 ml-4 list-disc">
+                                <li><span class="font-bold">Erratic:</span> Cow shows irregular behavior, reduced appetite</li>
+                                <li><span class="font-bold">Normal:</span> Typical behavior for your cattle</li>
+                                <li><span class="font-bold">Stable:</span> Consistent behavior, good appetite</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="guide-item">
+                            <h4 class="font-medium text-blue-700">Heat Stress</h4>
+                            <ul class="text-xs text-blue-800 mt-1 ml-4 list-disc">
+                                <li><span class="font-bold">Comfortable:</span> Normal breathing, seeking shade occasionally</li>
+                                <li><span class="font-bold">Warm:</span> Increased breathing rate, seeking shade often</li>
+                                <li><span class="font-bold">Stressed:</span> Rapid breathing, excessive salivation, reduced movement</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6 p-3 bg-green-100 rounded-lg border border-green-300">
+                        <h3 class="font-bold text-green-800"><i class="fas fa-clipboard-check mr-2"></i>Cow's Health Status</h3>
+                        <div id="pc-score-display" class="text-xs text-green-800 mt-2">
+                            <p>Enter your cow's health status above to see the results.</p>
+                        </div>
+                    </div>
+                    
+                    <button id="calculate-btn" class="mt-4 w-full bg-green-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-green-700 transition-colors duration-300">
+                        <i class="fas fa-calculator mr-2"></i>Calculate Health Status
+                    </button>
 
-        <!-- Plot Panel -->
-        <div class="lg:w-2/3 p-6 bg-gray-50 rounded-lg shadow-inner flex flex-col">
-            <h2 class="text-2xl font-bold mb-4 text-gray-800">PCA Visualization</h2>
-            <div class="plot-container w-full flex-grow">
-                <div id="pca-plot"></div>
-            </div>
-            <div class="mt-6 p-4 rounded-xl bg-white shadow-sm">
-                <h3 class="text-xl font-bold mb-2 text-gray-800">How to Interpret this Map</h3>
-                <p class="text-gray-700 mb-4">The map below shows your cow's health profile in relation to typical profiles of three different breeds. Use this to understand your cow's heat tolerance and overall health.</p>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <h4 class="font-semibold text-lg text-gray-800">Health Zones:</h4>
-                        <div class="mt-2 space-y-2">
-                            <div class="flex items-center space-x-2">
-                                <span class="w-4 h-4 bg-green-500 rounded-full"></span>
-                                <span class="text-gray-700 font-bold">Ideal Zone:</span>
-                                <span class="text-sm text-gray-600">Your cow is likely well-adapted and healthy.</span>
+                    <div class="mt-4 flex gap-2">
+                        <input type="text" id="cow-name" placeholder="Enter Cow ID to Save" class="flex-grow p-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500 text-sm">
+                        <button id="save-btn" class="bg-green-600 text-white font-semibold py-2 px-3 rounded-lg shadow-md hover:bg-green-700 transition-colors duration-300 whitespace-nowrap">
+                            <i class="fas fa-save mr-1"></i>Save
+                        </button>
+                    </div>
+                    
+                    <!-- Saved Profiles Section -->
+                    <div class="mt-4 p-3 rounded-xl bg-purple-50 border border-purple-200">
+                        <h4 class="font-bold text-purple-800"><i class="fas fa-list-alt mr-2"></i>Saved Profiles</h4>
+                        <div id="saved-profiles" class="text-xs text-purple-800 mt-2">
+                            <p>No profiles saved yet.</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Report Generation -->
+                    <div class="report-panel mt-4">
+                        <h4 class="font-bold text-amber-800"><i class="fas fa-file-pdf mr-2"></i>Generate Report</h4>
+                        <p class="text-xs text-amber-800 mt-2">Create a detailed health report for your records.</p>
+                        <button id="report-btn" class="mt-2 w-full bg-amber-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-amber-700 transition-colors duration-300">
+                            <i class="fas fa-download mr-2"></i>Generate Health Report
+                        </button>
+                    </div>
+                    
+                    <div class="mt-4 p-3 rounded-xl bg-blue-50 border border-blue-200">
+                        <h4 class="font-bold text-blue-800"><i class="fas fa-lightbulb mr-2"></i>Recommendations</h4>
+                        <div id="recommendations" class="text-xs text-blue-800 mt-2">
+                            <p>Complete the assessment to get personalized recommendations for your cow.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Plot Panel -->
+                <div class="lg:w-3/5 p-4 bg-gray-50 rounded-lg shadow-inner flex flex-col">
+                    <h2 class="text-xl font-bold mb-3 text-gray-800"><i class="fas fa-map-marked-alt mr-2"></i>Health Status Map</h2>
+                    
+                    <div class="plot-container w-full flex-grow relative">
+                        <div id="pca-plot"></div>
+                        <!-- Quadrant Labels -->
+                        <div class="quadrant-label quadrant-top-right">High Stress<br>Poor Health</div>
+                        <div class="quadrant-label quadrant-top-left">High Stress<br>Good Health</div>
+                        <div class="quadrant-label quadrant-bottom-right">Low Stress<br>Poor Health</div>
+                        <div class="quadrant-label quadrant-bottom-left">Low Stress<br>Good Health</div>
+                    </div>
+                    
+                    <div class="breed-comparison">
+                        <div class="breed-card bg-green-100 border border-green-300">
+                            <h4 class="font-bold text-green-800 text-sm">Brangus</h4>
+                            <p class="text-xs text-green-700 mt-1">Balanced and adaptable</p>
+                            <div class="status-badge bg-green-500" id="brangus-status">--</div>
+                        </div>
+                        <div class="breed-card bg-teal-100 border border-teal-300">
+                            <h4 class="font-bold text-teal-800 text-sm">Kedah-Kelantan</h4>
+                            <p class="text-xs text-teal-700 mt-1">Heat resistant</p>
+                            <div class="status-badge bg-teal-500" id="kk-status">--</div>
+                        </div>
+                        <div class="breed-card bg-red-100 border border-red-300">
+                            <h4 class="font-bold text-red-800 text-sm">Holstein Friesian</h4>
+                            <p class="text-xs text-red-700 mt-1">Heat sensitive</p>
+                            <div class="status-badge bg-red-500" id="hf-status">--</div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 p-3 rounded-xl bg-white shadow-sm">
+                        <h3 class="font-bold mb-2 text-gray-800"><i class="fas fa-info-circle mr-2"></i>How to Interpret this Map</h3>
+                        <p class="text-gray-700 mb-3 text-xs">The map shows your cow's health profile compared to typical profiles of three different breeds.</p>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <h4 class="font-semibold text-gray-800 text-sm">Health Zones:</h4>
+                                <div class="mt-2 space-y-2">
+                                    <div class="flex items-center space-x-2">
+                                        <span class="w-3 h-3 bg-green-500 rounded-full"></span>
+                                        <span class="text-gray-700 font-bold text-xs">Ideal Zone:</span>
+                                        <span class="text-xs text-gray-600">Healthy with low stress</span>
+                                    </div>
+                                    <div class="flex items-center space-x-2">
+                                        <span class="w-3 h-3 bg-red-500 rounded-full"></span>
+                                        <span class="text-gray-700 font-bold text-xs">Stressed Zone:</span>
+                                        <span class="text-xs text-gray-600">Struggling with health issues</span>
+                                    </div>
+                                    <div class="flex items-center space-x-2">
+                                        <span class="w-3 h-3 bg-yellow-500 rounded-full"></span>
+                                        <span class="text-gray-700 font-bold text-xs">Watchful Zone:</span>
+                                        <span class="text-xs text-gray-600">Monitor for changes</span>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="flex items-center space-x-2">
-                                <span class="w-4 h-4 bg-red-500 rounded-full"></span>
-                                <span class="text-gray-700 font-bold">Stressed Zone:</span>
-                                <span class="text-sm text-gray-600">Your cow may be struggling with heat or other issues.</span>
-                            </div>
-                            <div class="flex items-center space-x-2">
-                                <span class="w-4 h-4 bg-yellow-500 rounded-full"></span>
-                                <span class="text-gray-700 font-bold">Watchful Zone:</span>
-                                <span class="text-sm text-gray-600">Monitor this cow closely for changes in health.</span>
+                            <div>
+                                <h4 class="font-semibold text-gray-800 text-sm">Breeds on the Map:</h4>
+                                <div class="mt-2 space-y-2">
+                                    <div class="flex items-center space-x-2">
+                                        <span class="w-3 h-3 bg-green-500 rounded-full"></span>
+                                        <span class="text-gray-700 font-bold text-xs">Brangus:</span>
+                                        <span class="text-xs text-gray-600">A balanced and adaptable breed.</span>
+                                    </div>
+                                    <div class="flex items-center space-x-2">
+                                        <span class="w-3 h-3 bg-teal-500 rounded-full"></span>
+                                        <span class="text-gray-700 font-bold text-xs">Kedah-Kelantan:</span>
+                                        <span class="text-xs text-gray-600">Naturally healthy and heat-adapted.</span>
+                                    </div>
+                                    <div class="flex items-center space-x-2">
+                                        <span class="w-3 h-3 bg-red-500 rounded-full"></span>
+                                        <span class="text-gray-700 font-bold text-xs">Holstein Friesian:</span>
+                                        <span class="text-xs text-gray-600">Often prone to heat stress.</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
-                    <div>
-                        <h4 class="font-semibold text-lg text-gray-800">Breeds on the Map:</h4>
-                        <div class="mt-2 space-y-2">
-                            <div class="flex items-center space-x-2">
-                                <span class="w-4 h-4 bg-green-500 rounded-full"></span>
-                                <span class="text-gray-700 font-bold">Brangus:</span>
-                                <span class="text-sm text-gray-600">A balanced and adaptable breed.</span>
-                            </div>
-                            <div class="flex items-center space-x-2">
-                                <span class="w-4 h-4 bg-green-500 rounded-full"></span>
-                                <span class="text-gray-700 font-bold">Kedah-Kelantan:</span>
-                                <span class="text-sm text-gray-600">Naturally healthy and well-adapted to heat.</span>
-                            </div>
-                            <div class="flex items-center space-x-2">
-                                <span class="w-4 h-4 bg-red-500 rounded-full"></span>
-                                <span class="text-sm text-gray-600">Holstein Friesian:</span>
-                                <span class="text-gray-700 font-bold">Holstein Friesian:</span>
-                                <span class="text-sm text-gray-600">Often prone to heat stress and less adapted.</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="mt-4 p-4 rounded-xl bg-green-100 shadow-sm">
-                <h4 class="font-bold text-lg text-green-800">A Farmer's Guide to Using the Model</h4>
-                <p class="text-green-800 mt-2">Match your cow's visible traits to the descriptions below:</p>
-                <div class="mt-2 space-y-2 text-sm text-green-700">
-                    <p class="font-bold">Overall Health:</p>
-                    <ul class="list-disc list-inside ml-4">
-                        <li>1 (Low):Cow is lethargic, has a dull coat, or is visibly unwell.</li>
-                        <li>2 (Medium):Normal appearance and behavior for the breed.</li>
-                        <li>3 (High):Cow is very active, has a shiny coat, and is eating very well.</li>
-                    </ul>
-                    <p class="font-bold">Hormonal Balance:</p>
-                    <ul class="list-disc list-inside ml-4">
-                        <li>1 (Low):Cow seems calm, has stable behavior, and a good appetite.</li>
-                        <li>2 (Medium):Average behavior.</li>
-                        <li>3 (High):Cow shows erratic or jittery behavior and a reduced appetite.</li>
-                    </ul>
-                    <p class="font-bold">Heat Stress Level:</p>
-                    <ul class="list-disc list-inside ml-4">
-                        <li>1 (Low):Cow is in a cool, shaded environment with minimal physical stressors.</li>
-                        <li>2 (Medium):In average conditions, with some exposure to sun or heat.</li>
-                        <li>3 (High):Cow is in direct sunlight on a very hot day and shows signs of discomfort.</li>
-                    </ul>
                 </div>
             </div>
         </div>
     </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-app.js";
-        import { getAuth, signInWithCustomToken, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, serverTimestamp, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore.js";
+    <footer>
+        <p class="text-sm">Authors: Akeem Babatunde Sikiru and Nurulfiza Bint Mat Isa</p>
+        <p class="text-sm">Vaccines and Biomolecules Laboratory, Institute of Biosciences, Universiti Putra Malaysia</p>
+    </footer>
 
-        // --- Core Data for PCA Model ---
-        const pcaData = {
-            // PC scores for the original data points from the analysis
-            original_scores: [
-                { breed: 'BR', pc1: -1.72, pc2: -0.15 }, { breed: 'BR', pc1: -1.02, pc2: 0.18 },
-                { breed: 'BR', pc1: -0.84, pc2: 0.29 }, { breed: 'BR', pc1: 0.25, pc2: -0.42 },
-                { breed: 'BR', pc1: -0.09, pc2: -0.63 }, { breed: 'BR', pc1: -0.72, pc2: 0.21 },
-                { breed: 'BR', pc1: -0.11, pc2: 0.38 }, { breed: 'BR', pc1: 1.09, pc2: 0.11 },
-                { breed: 'BR', pc1: -1.07, pc2: 0.15 }, { breed: 'BR', pc1: -1.41, pc2: 0.10 },
-                { breed: 'BR', pc1: -0.37, pc2: -0.11 }, { breed: 'BR', pc1: -0.45, pc2: 0.13 },
-                { breed: 'BR', pc1: -0.61, pc2: -0.02 }, { breed: 'BR', pc1: -0.14, pc2: -0.34 },
-                { breed: 'BR', pc1: -0.58, pc2: 0.31 }, { breed: 'BR', pc1: 0.33, pc2: -0.19 },
-                { breed: 'KK', pc1: 1.05, pc2: 0.03 }, { breed: 'KK', pc1: 0.81, pc2: -0.11 },
-                { breed: 'KK', pc1: -0.39, pc2: -0.45 }, { breed: 'KK', pc1: -0.11, pc2: -0.12 },
-                { breed: 'KK', pc1: -0.15, pc2: -0.30 }, { breed: 'KK', pc1: -0.73, pc2: 0.03 },
-                { breed: 'KK', pc1: -0.49, pc2: 0.06 }, { breed: 'KK', pc1: -0.05, pc2: 0.28 },
-                { breed: 'KK', pc1: 0.08, pc2: 0.40 }, { breed: 'KK', pc1: 0.09, pc2: 0.33 },
-                { breed: 'KK', pc1: 0.77, pc2: -0.09 }, { breed: 'KK', pc1: 0.69, pc2: -0.21 },
-                { breed: 'KK', pc1: 1.48, pc2: 0.15 }, { breed: 'KK', pc1: 0.88, pc2: -0.28 },
-                { breed: 'KK', pc1: -0.12, pc2: -0.33 }, { breed: 'KK', pc1: 1.39, pc2: -0.39 },
-                { breed: 'HF', pc1: 1.83, pc2: 0.84 }, { breed: 'HF', pc1: 0.66, pc2: 1.34 },
-                { breed: 'HF', pc1: 0.99, pc2: 1.58 }, { breed: 'HF', pc1: 1.09, pc2: 1.77 },
-                { breed: 'HF', pc1: 0.16, pc2: 0.29 }, { breed: 'HF', pc1: 0.05, pc2: 0.20 },
-                { breed: 'HF', pc1: 0.66, pc2: 0.68 }, { breed: 'HF', pc1: 0.26, pc2: 0.16 },
-                { breed: 'HF', pc1: 0.26, pc2: 0.16 }, { breed: 'HF', pc1: 1.59, pc2: 0.42 },
-                { breed: 'HF', pc1: 1.62, pc2: 0.71 }, { breed: 'HF', pc1: 1.08, pc2: 0.83 },
-                { breed: 'HF', pc1: 0.23, pc2: 0.21 }, { breed: 'HF', pc1: 0.96, pc2: 0.87 },
-                { breed: 'HF', pc1: 0.11, pc2: 0.31 }, { breed: 'HF', pc1: 1.46, pc2: 1.31 },
-            ]
-        };
-
+    <script>
+        // Initialize with default values
         let currentPC1 = 0;
         let currentPC2 = 0;
         let currentPC3 = 0;
+        let savedProfiles = [];
 
-        window.updateScores = function() {
+        // Function to set up rating buttons
+        function setupRatingButtons() {
+            document.querySelectorAll('.rating-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const inputId = this.getAttribute('data-input');
+                    const value = this.getAttribute('data-value');
+                    
+                    // Update the hidden input
+                    document.getElementById(inputId).value = value;
+                    
+                    // Update UI
+                    this.parentElement.querySelectorAll('.rating-btn').forEach(b => {
+                        b.classList.remove('selected');
+                    });
+                    this.classList.add('selected');
+                });
+            });
+        }
+
+        // Function to set up calculate button
+        function setupCalculateButton() {
+            document.getElementById('calculate-btn').addEventListener('click', updateScores);
+        }
+        
+        // Function to set up save button
+        function setupSaveButton() {
+            document.getElementById('save-btn').addEventListener('click', saveProfile);
+        }
+        
+        // Function to set up report button
+        function setupReportButton() {
+            document.getElementById('report-btn').addEventListener('click', generateReport);
+        }
+
+        // Update scores function
+        function updateScores() {
             const pc1Value = parseFloat(document.getElementById('overall-health').value);
             const pc2Value = parseFloat(document.getElementById('hormonal-balance').value);
             const pc3Value = parseFloat(document.getElementById('heat-stress').value);
 
-            // Corrected mapping:
-            // High health (3) should map to a negative PC1 score, so we invert the scale.
-            // High hormonal balance (3) should map to a negative PC2 score, so we invert the scale.
-            // High heat stress (3) should map to a positive PC3 score.
+            // Calculate PC scores
             currentPC1 = (pc1Value - 2) * -1;
             currentPC2 = (pc2Value - 2) * -1;
             currentPC3 = (pc3Value - 2) * 1;
             
+            // Update status display
             document.getElementById('pc-score-display').innerHTML = `
                 <p class="font-bold">Overall Health: ${pc1Value === 1 ? 'Low' : pc1Value === 3 ? 'High' : 'Medium'}</p>
-                <p class="font-bold">Hormonal Balance: ${pc2Value === 1 ? 'Low' : pc2Value === 3 ? 'High' : 'Medium'}</p>
-                <p class="font-bold">Heat Stress: ${pc3Value === 1 ? 'Low' : pc3Value === 3 ? 'High' : 'Medium'}</p>
-                <p class="mt-2 text-sm">Your cow's scores: PC1 = ${currentPC1.toFixed(1)}, PC2 = ${currentPC2.toFixed(1)}, PC3 = ${currentPC3.toFixed(1)}</p>
+                <p class="font-bold">Hormonal Balance: ${pc2Value === 1 ? 'Erratic' : pc2Value === 3 ? 'Stable' : 'Normal'}</p>
+                <p class="font-bold">Heat Stress: ${pc3Value === 1 ? 'Comfortable' : pc3Value === 3 ? 'Stressed' : 'Warm'}</p>
+                <p class="mt-2">Your cow's position: PC1 = ${currentPC1.toFixed(1)}, PC2 = ${currentPC2.toFixed(1)}</p>
             `;
             
+            // Update breed comparison
+            updateBreedComparison(currentPC1, currentPC2);
+            
+            // Generate recommendations
+            generateRecommendations(pc1Value, pc2Value, pc3Value);
+            
+            // Plot the graph
             plotGraph(currentPC1, currentPC2);
-        };
-        
-        let userCowProfiles = [];
-
-        // Firebase Initialization
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
-        
-        async function authenticate() {
-            try {
-                if (typeof __initial_auth_token !== 'undefined') {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
-                const userId = auth.currentUser?.uid || 'anonymous';
-                console.log("Authenticated with user ID:", userId);
-                
-                const q = query(collection(db, `artifacts/${appId}/users/${userId}/profiles`));
-                onSnapshot(q, (snapshot) => {
-                    userCowProfiles = [];
-                    snapshot.forEach((doc) => {
-                        userCowProfiles.push({ id: doc.id, ...doc.data() });
-                    });
-                    updateScores();
-                });
-            } catch (error) {
-                console.error("Authentication failed:", error);
-            }
         }
-
-        window.saveProfile = async function() {
-            const cowName = document.getElementById('cow-name').value;
-
-            if (!cowName) {
-                alert("Please enter a Cow ID/Name before saving.");
-                return;
-            }
-
-            const userId = auth.currentUser?.uid || 'anonymous';
-            try {
-                await addDoc(collection(db, `artifacts/${appId}/users/${userId}/profiles`), {
-                    name: cowName,
-                    pc1: currentPC1,
-                    pc2: currentPC2,
-                    pc3: currentPC3,
-                    timestamp: serverTimestamp()
-                });
-                document.getElementById('pc-score-display').textContent = `Profile for ${cowName} saved successfully!`;
-            } catch (e) {
-                console.error("Error adding document: ", e);
-                document.getElementById('pc-score-display').textContent = `Error saving profile.`;
+        
+        function updateBreedComparison(pc1, pc2) {
+            // Calculate distances to breed centroids (simplified)
+            const brangusDist = Math.sqrt(Math.pow(pc1 - (-0.5), 2) + Math.pow(pc2 - 0, 2));
+            const kkDist = Math.sqrt(Math.pow(pc1 - 0.5, 2) + Math.pow(pc2 - (-0.2), 2));
+            const hfDist = Math.sqrt(Math.pow(pc1 - 1.0, 2) + Math.pow(pc2 - 0.8, 2));
+            
+            // Find closest breed
+            const minDist = Math.min(brangusDist, kkDist, hfDist);
+            
+            // Update status badges
+            document.getElementById('brangus-status').textContent = brangusDist.toFixed(1);
+            document.getElementById('kk-status').textContent = kkDist.toFixed(1);
+            document.getElementById('hf-status').textContent = hfDist.toFixed(1);
+            
+            // Highlight closest breed
+            document.querySelectorAll('.breed-card').forEach(card => {
+                card.classList.remove('ring-2', 'ring-offset-2', 'ring-blue-500');
+            });
+            
+            if (minDist === brangusDist) {
+                document.querySelector('.bg-green-100').classList.add('ring-2', 'ring-offset-2', 'ring-blue-500');
+            } else if (minDist === kkDist) {
+                document.querySelector('.bg-teal-100').classList.add('ring-2', 'ring-offset-2', 'ring-blue-500');
+            } else {
+                document.querySelector('.bg-red-100').classList.add('ring-2', 'ring-offset-2', 'ring-blue-500');
             }
         }
         
-        window.deleteProfile = async function() {
-            const cowName = document.getElementById('cow-name').value;
-
-            if (!cowName) {
-                alert("Please enter a Cow ID/Name to delete.");
-                return;
+        function generateRecommendations(health, balance, stress) {
+            let recommendations = "";
+            
+            if (health === 1) {
+                recommendations += "<p class='mb-2'><i class='fas fa-exclamation-triangle text-red-500 mr-2'></i><b>Health concern:</b> Consult a veterinarian for a health check.</p>";
+            } else if (health === 2) {
+                recommendations += "<p class='mb-2'><i class='fas fa-check-circle text-green-500 mr-2'></i><b>Health:</b> Your cow appears healthy but monitor regularly.</p>";
+            } else {
+                recommendations += "<p class='mb-2'><i class='fas fa-check-circle text-green-500 mr-2'></i><b>Health:</b> Your cow is in excellent health.</p>";
             }
             
-            const profileToDelete = userCowProfiles.find(p => p.name === cowName);
-            if (profileToDelete) {
-                const userId = auth.currentUser?.uid || 'anonymous';
-                try {
-                    await deleteDoc(doc(db, `artifacts/${appId}/users/${userId}/profiles`, profileToDelete.id));
-                    document.getElementById('pc-score-display').textContent = `Profile for ${cowName} deleted successfully.`;
-                } catch (e) {
-                    console.error("Error deleting document: ", e);
-                    document.getElementById('pc-score-display').textContent = `Error deleting profile.`;
-                }
+            if (stress === 3) {
+                recommendations += "<p class='mb-2'><i class='fas fa-temperature-high text-red-500 mr-2'></i><b>Heat stress:</b> Provide shade, cool water, and reduce activity during hot hours.</p>";
+            } else if (stress === 2) {
+                recommendations += "<p class='mb-2'><i class='fas fa-temperature-high text-yellow-500 mr-2'></i><b>Heat stress:</b> Monitor for signs of increased stress during hot weather.</p>";
             } else {
-                alert("Profile not found. Please enter an existing Cow ID.");
+                recommendations += "<p class'='mb-2'><i class='fas fa-temperature-low text-green-500 mr-2'></i><b>Heat stress:</b> Your cow is handling the temperature well.</p>";
             }
+            
+            if (balance === 1) {
+                recommendations += "<p class='mb-2'><i class='fas fa-balance-scale text-red-500 mr-2'></i><b>Behavior:</b> Hormonal imbalance detected. Monitor feeding patterns closely.</p>";
+            } else if (balance === 2) {
+                recommendations += "<p class='mb-2'><i class='fas fa-balance-scale text-green-500 mr-2'></i><b>Behavior:</b> Your cow shows normal behavior patterns.</p>";
+            } else {
+                recommendations += "<p class='mb-2'><i class='fas fa-balance-scale text-green-500 mr-2'></i><b>Behavior:</b> Your cow shows stable hormonal patterns.</p>";
+            }
+            
+            document.getElementById('recommendations').innerHTML = recommendations;
         }
 
         function plotGraph(newPC1, newPC2) {
+            // Sample data for visualization
             const breeds = ['BR', 'KK', 'HF'];
             const colors = {
                 'BR': '#22c55e', // green-500
@@ -300,63 +625,230 @@
                 'HF': '#ef4444' // red-500
             };
             
-            const originalTraces = breeds.map(breed => {
-                const breedData = pcaData.original_scores.filter(d => d.breed === breed);
+            // Sample breed data
+            const breedData = {
+                'BR': {x: [-1.72, -1.02, -0.84, 0.25, -0.09, -0.72, -0.11, 1.09, -1.07, -1.41], 
+                       y: [-0.15, 0.18, 0.29, -0.42, -0.63, 0.21, 0.38, 0.11, 0.15, 0.10]},
+                'KK': {x: [1.05, 0.81, -0.39, -0.11, -0.15, -0.73, -0.49, -0.05, 0.08, 0.09], 
+                       y: [0.03, -0.11, -0.45, -0.12, -0.30, 0.03, 0.06, 0.28, 0.40, 0.33]},
+                'HF': {x: [1.83, 0.66, 0.99, 1.09, 0.16, 0.05, 0.66, 0.26, 0.26, 1.59], 
+                       y: [0.84, 1.34, 1.58, 1.77, 0.29, 0.20, 0.68, 0.16, 0.16, 0.42]}
+            };
+            
+            const traces = breeds.map(breed => {
                 return {
-                    x: breedData.map(d => d.pc1),
-                    y: breedData.map(d => d.pc2),
+                    x: breedData[breed].x,
+                    y: breedData[breed].y,
                     mode: 'markers',
                     type: 'scatter',
-                    name: `Original ${breed} Data`,
-                    marker: { color: colors[breed], size: 8, opacity: 0.6 }
+                    name: breed === 'BR' ? 'Brangus' : (breed === 'KK' ? 'Kedah-Kelantan' : 'Holstein Friesian'),
+                    marker: { 
+                        color: colors[breed], 
+                        size: 10, 
+                        opacity: 0.7,
+                        line: {
+                            color: 'white',
+                            width: 1
+                        }
+                    }
                 };
             });
             
-            const userProfilesTrace = {
-                x: userCowProfiles.map(d => d.pc1),
-                y: userCowProfiles.map(d => d.pc2),
-                text: userCowProfiles.map(d => d.name),
-                mode: 'markers+text',
-                type: 'scatter',
-                name: 'Saved Profiles',
-                marker: { color: '#000000', size: 10, symbol: 'circle', line: { width: 2, color: 'black' } },
-                textposition: 'bottom center',
-                textfont: {
-                    family: 'Arial, sans-serif',
-                    size: 14,
-                    color: 'black'
-                }
-            };
-
-            const newPointTrace = {
+            // Add user's point
+            traces.push({
                 x: [newPC1],
                 y: [newPC2],
                 mode: 'markers',
                 type: 'scatter',
                 name: 'Your cow',
-                marker: { color: 'black', size: 12, symbol: 'star', line: { width: 2, color: 'black' } }
-            };
-
-            let traces = originalTraces;
-            if (userCowProfiles.length > 0) {
-                traces.push(userProfilesTrace);
-            }
-            if (newPC1 !== null && newPC2 !== null) {
-                traces.push(newPointTrace);
+                marker: { 
+                    color: 'black', 
+                    size: 16, 
+                    symbol: 'star',
+                    line: {
+                        color: 'white',
+                        width: 2
+                    }
+                }
+            });
+            
+            // Add saved profiles to the plot
+            if (savedProfiles.length > 0) {
+                traces.push({
+                    x: savedProfiles.map(profile => profile.pc1),
+                    y: savedProfiles.map(profile => profile.pc2),
+                    mode: 'markers',
+                    type: 'scatter',
+                    name: 'Saved Profiles',
+                    marker: { 
+                        color: 'purple', 
+                        size: 12, 
+                        symbol: 'diamond',
+                        line: {
+                            color: 'white',
+                            width: 1
+                        }
+                    }
+                });
             }
             
             const layout = {
-                title: 'PCA Biplot of Cattle Biochemical Profiles',
-                xaxis: { title: 'PC1 General Health' },
-                yaxis: { title: 'PC2 Hormonal Balance' },
+                title: {
+                    text: 'Cattle Health Comparison',
+                    font: {
+                        size: 18
+                    }
+                },
+                xaxis: { 
+                    title: {
+                        text: 'PC1 General Health →',
+                        font: {
+                            size: 14
+                        }
+                    },
+                    range: [-2.5, 2.5],
+                    zeroline: true,
+                    zerolinecolor: '#aaa',
+                    zerolinewidth: 2,
+                    gridcolor: '#eee',
+                    gridwidth: 1
+                },
+                yaxis: { 
+                    title: {
+                        text: '↑ PC2 Hormonal Balance',
+                        font: {
+                            size: 14
+                        }
+                    },
+                    range: [-2, 2],
+                    zeroline: true,
+                    zerolinecolor: '#aaa',
+                    zerolinewidth: 2,
+                    gridcolor: '#eee',
+                    gridwidth: 1
+                },
                 hovermode: 'closest',
-                showlegend: true
+                showlegend: true,
+                legend: {
+                    x: 0,
+                    y: 1.1,
+                    orientation: 'h',
+                    font: {
+                        size: 12
+                    }
+                },
+                plot_bgcolor: '#f8fafc',
+                paper_bgcolor: '#f8fafc',
+                autosize: true,
+                margin: {
+                    l: 50,
+                    r: 30,
+                    b: 50,
+                    t: 70,
+                    pad: 8
+                }
             };
             
-            Plotly.newPlot('pca-plot', traces, layout);
-        };
+            Plotly.newPlot('pca-plot', traces, layout, {responsive: true});
+        }
         
-        authenticate();
+        function saveProfile() {
+            const cowName = document.getElementById('cow-name').value;
+            if (!cowName) {
+                alert("Please enter a Cow ID/Name before saving.");
+                return;
+            }
+            
+            // Add profile to saved profiles
+            const profile = {
+                name: cowName,
+                pc1: currentPC1,
+                pc2: currentPC2,
+                pc3: currentPC3,
+                health: document.getElementById('overall-health').value,
+                balance: document.getElementById('hormonal-balance').value,
+                stress: document.getElementById('heat-stress').value,
+                timestamp: new Date().toLocaleString()
+            };
+            
+            savedProfiles.push(profile);
+            updateSavedProfilesList();
+            
+            alert(`Profile for ${cowName} saved successfully!`);
+        }
+        
+        function deleteProfile(index) {
+            const profileName = savedProfiles[index].name;
+            savedProfiles.splice(index, 1);
+            updateSavedProfilesList();
+            plotGraph(currentPC1, currentPC2); // Update plot without the deleted profile
+            alert(`Profile for ${profileName} deleted successfully!`);
+        }
+        
+        function updateSavedProfilesList() {
+            const savedProfilesContainer = document.getElementById('saved-profiles');
+            
+            if (savedProfiles.length === 0) {
+                savedProfilesContainer.innerHTML = '<p>No profiles saved yet.</p>';
+                return;
+            }
+            
+            savedProfilesContainer.innerHTML = '';
+            savedProfiles.forEach((profile, index) => {
+                const profileElement = document.createElement('div');
+                profileElement.className = 'saved-profile';
+                profileElement.innerHTML = `
+                    <span>${profile.name} (${new Date(profile.timestamp).toLocaleDateString()})</span>
+                    <button onclick="deleteProfile(${index})">Delete</button>
+                `;
+                savedProfilesContainer.appendChild(profileElement);
+            });
+        }
+        
+        function generateReport() {
+            if (savedProfiles.length === 0) {
+                alert("No profiles available to generate a report. Please save at least one profile first.");
+                return;
+            }
+            
+            // Create a simple text report
+            let report = "Cattle Health Assessment Report\n";
+            report += "Generated on: " + new Date().toLocaleString() + "\n\n";
+            report += "==========================================\n\n";
+            
+            savedProfiles.forEach(profile => {
+                report += `Cow ID: ${profile.name}\n`;
+                report += `Assessment Date: ${profile.timestamp}\n`;
+                report += `Overall Health: ${profile.health === '1' ? 'Low' : profile.health === '3' ? 'High' : 'Medium'}\n`;
+                report += `Hormonal Balance: ${profile.balance === '1' ? 'Erratic' : profile.balance === '3' ? 'Stable' : 'Normal'}\n`;
+                report += `Heat Stress: ${profile.stress === '1' ? 'Comfortable' : profile.stress === '3' ? 'Stressed' : 'Warm'}\n`;
+                report += `PC1 Score: ${profile.pc1.toFixed(2)}\n`;
+                report += `PC2 Score: ${profile.pc2.toFixed(2)}\n`;
+                report += "------------------------------------------\n\n";
+            });
+            
+            // Create a download link
+            const blob = new Blob([report], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'cattle_health_report.txt';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            alert("Health report generated successfully!");
+        }
+
+        // Initialize everything when the page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            setupRatingButtons();
+            setupCalculateButton();
+            setupSaveButton();
+            setupReportButton();
+            updateScores();
+        });
     </script>
 </body>
 </html>
